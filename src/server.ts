@@ -24,14 +24,9 @@ function removeTrailingForwardSlash(path: string) {
 	return path.endsWith('/') ? path.slice(0, path.length - 1) : path;
 }
 
-export function start(manifest: SSRManifest, options: Options) {
-	if (options.start === false) {
-		return;
-	}
-
+function createHandler(app: App) {
 	const clientRoot = new URL('../client/', import.meta.url);
-	const app = new App(manifest);
-	const handler = async (request: Request, connInfo: any) => {
+	return async (request: Request, connInfo?: any) => {
 		if (app.match(request)) {
 			let ip = connInfo?.remoteAddr?.hostname;
 			Reflect.set(request, Symbol.for('astro.clientAddress'), ip);
@@ -83,7 +78,9 @@ export function start(manifest: SSRManifest, options: Options) {
 			return fileResp;
 		}
 	};
+}
 
+function runServer(handler: (request: Request, connInfo: any) => Promise<any>, options: Options) {
 	const port = options.port ?? 8085;
 	_server = new Server({
 		port,
@@ -95,8 +92,20 @@ export function start(manifest: SSRManifest, options: Options) {
 	console.error(`Server running on port ${port}`);
 }
 
+export function start(manifest: SSRManifest, options: Options) {
+	if (options.start === false) {
+		return;
+	}
+
+	const app = new App(manifest)
+	const handler = createHandler(app)
+
+	runServer(handler, options)
+}
+
 export function createExports(manifest: SSRManifest, options: Options) {
 	const app = new App(manifest);
+	const handler = createHandler(app)
 	return {
 		async stop() {
 			if (_server) {
@@ -109,10 +118,13 @@ export function createExports(manifest: SSRManifest, options: Options) {
 			return _server !== undefined;
 		},
 		async start() {
-			return start(manifest, options);
+			return runServer(handler, options);
 		},
-		async handle(request: Request) {
+		async render(request: Request) {
 			return app.render(request);
+		},
+		async handle(request: Request, connInfo?: any) {
+			return handler(request, connInfo);
 		},
 	};
 }
