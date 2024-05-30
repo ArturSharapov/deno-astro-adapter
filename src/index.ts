@@ -78,7 +78,7 @@ export function getAdapter(args?: Options): AstroAdapter {
 		name: '@deno/astro-adapter',
 		serverEntrypoint: '@deno/astro-adapter/server.ts',
 		args: args ?? {},
-		exports: ['stop', 'handle', 'start', 'running'],
+		exports: ['stop', 'handle', 'start', 'running', ...(args?.exports ?? [])],
 		supportedAstroFeatures: {
 			hybridOutput: 'stable',
 			staticOutput: 'stable',
