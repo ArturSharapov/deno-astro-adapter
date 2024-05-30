@@ -78,7 +78,7 @@ export function getAdapter(args?: Options): AstroAdapter {
 		name: '@deno/astro-adapter',
 		serverEntrypoint: '@deno/astro-adapter/server.ts',
 		args: args ?? {},
-		exports: ['stop', 'handle', 'start', 'running', ...(args?.exports ?? [])],
+		exports: ['stop', 'handle', 'start', 'running'],
 		supportedAstroFeatures: {
 			hybridOutput: 'stable',
 			staticOutput: 'stable',
@@ -180,6 +180,9 @@ export default function createIntegration(args?: Options): AstroIntegration {
 					banner: {
 						js: SHIM,
 					},
+					footer: args?.exports?.length ? {
+						js: `export {${args.exports.join()}}`
+					} : undefined,
 					logOverride: {
 						'ignored-bare-import': 'silent'
 					},
